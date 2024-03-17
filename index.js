@@ -65,6 +65,11 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/allusers', async(req, res) => {
+      const result = await usersDB.find().toArray();
+      res.send(result);
+    })
+
     app.post('/selections', async(req, res) => {
       const courseData = req.body;
       const result = await students.insertOne(courseData);
@@ -118,6 +123,19 @@ async function run() {
       };
       const result = await instructors.updateOne(filter, updateDoc);
       res.send(result)
+    })
+
+    app.put('/userstatus/:id', async(req, res) =>{
+      const id = req.params.id;
+      const receivedData = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          userStatus : receivedData.userStatus
+        },
+      };
+      const result = await usersDB.updateOne(filter, updateDoc);
+      res.send(result);
     })
 
     app.delete('/selections/:id', async(req, res) => {
