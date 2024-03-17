@@ -27,6 +27,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const database = client.db("scsDB");
+    const usersDB = database.collection("usersDB");
     const instructors = database.collection("instructors");
     const students = database.collection("students");
     const payments = database.collection("payments");
@@ -43,10 +44,24 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/enrolled/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {student: id};
+      const result = await payments.find(query).toArray();
+      res.send(result);
+    })
+
     app.get('/selections/:id', async(req, res) => {
       const id = req.params.id;
       const query = {student: id};
       const result = await students.find(query).toArray();
+      res.send(result);
+    })
+
+    app.get('/user/:id', async(req, res) => {
+      const id = req.params.id; 
+      const query = { firebaseUserID: id };
+      const result = await usersDB.findOne(query);
       res.send(result);
     })
 
@@ -62,27 +77,47 @@ async function run() {
       res.send(result);
     })
 
-    app.put('/payments', async(req, res) => {
+    app.post('/user/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = { firebaseUserID: id };
+      const result = await usersDB.findOne(query);
+      let resultIns;
+      if (!result?._id) {
+        const doc = {
+          firebaseUserID: id, userStatus: 'student'
+        };
+        resultIns = await usersDB.insertOne(doc);
+      }
+    })
+
+    app.put('/payments/:id', async(req, res) => {
       const paymentData = req.body;
-      const id = paymentData.course.cN;
-      console.log(id);
-      console.log(paymentData);
-      const result = await payments.insertOne(paymentData);
-      const filter = { cN: id };
-      const options = { upsert: true };
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const currentEn = await instructors.findOne(query);
+      console.log(currentEn.enrolled);
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          enrolled: 1
+          enrolled: (currentEn.enrolled === undefined) ? 1 : (currentEn.enrolled + 1)
         },
       };
-      const result1 = await instructors.updateOne(filter, updateDoc, options);
+      const result = await payments.insertOne(paymentData);
+      const result1 = await instructors.updateOne(filter, updateDoc);
       res.send({result, result1});
     })
 
-    app.put('updateTesting', async(req, res) => {
+    app.put('/updateTesting', async(req, res) => {
       const receivedData = req.body;
-      console.log(receivedData);
-      res.send({"status": "working"})
+      const id = '65f1762a05945cda344fea61';
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          enrolledStd : 0
+        },
+      };
+      const result = await instructors.updateOne(filter, updateDoc);
+      res.send(result)
     })
 
     app.delete('/selections/:id', async(req, res) => {
