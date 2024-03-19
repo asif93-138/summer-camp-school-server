@@ -84,12 +84,13 @@ async function run() {
 
     app.post('/user/:id', async(req, res) => {
       const id = req.params.id;
+      const userObj = req.body;
       const query = { firebaseUserID: id };
       const result = await usersDB.findOne(query);
       let resultIns;
       if (!result?._id) {
         const doc = {
-          firebaseUserID: id, userStatus: 'student'
+          firebaseUserID: id, name: userObj.name, email: userObj.email, userStatus: 'student'
         };
         resultIns = await usersDB.insertOne(doc);
       }
@@ -135,6 +136,25 @@ async function run() {
         },
       };
       const result = await usersDB.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
+    app.put('/adcourseupdate/:id', async(req, res) =>{
+      const id = req.params.id;
+      const receivedData = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = receivedData?.cStatus ? 
+                        {
+                          $set: {
+                            cStatus : receivedData.cStatus
+                                },
+                        }
+                        : {
+                          $set: {
+                            adminFB : receivedData.adminFB
+                          },
+                        };
+      const result = await instructors.updateOne(filter, updateDoc);
       res.send(result);
     })
 
