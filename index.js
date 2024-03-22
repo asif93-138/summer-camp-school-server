@@ -158,6 +158,19 @@ async function run() {
       res.send(result);
     })
 
+    app.put('/updatethecourse/:id', async(req, res) => {
+      const id = req.params.id;
+      const updateCourse = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          seats: updateCourse.seats, price: updateCourse.price 
+        },
+      };
+      const result = await instructors.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
     app.delete('/selections/:id', async(req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
