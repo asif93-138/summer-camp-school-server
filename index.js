@@ -1,5 +1,6 @@
 const express = require('express')
 const app = express()
+const jwt = require('jsonwebtoken');
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const test = require('./testData.json');
@@ -22,6 +23,18 @@ const client = new MongoClient(uri, {
   }
 });
 
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization.split(' ')[1];
+    if (!authorization) {
+      return res.status(401).send({error: true, message: 'unauthorized request'})
+    }
+    jwt.verify(authorization, process.env.ACCESS_TOKEN, (error, decoded) => {
+      if (error) {return res.status(401).send({error: true, message: 'unauthorized request'})}
+      req.decoded = decoded;
+      next();
+    })
+}
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -37,21 +50,21 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/classes/:id', async(req, res) => {
+    app.get('/classes/:id', verifyJWT, async(req, res) => {
       const id = req.params.id;
       const query = {insID: id};
       const result = await instructors.find(query).toArray();
       res.send(result);
     })
 
-    app.get('/enrolled/:id', async(req, res) => {
+    app.get('/enrolled/:id', verifyJWT, async(req, res) => {
       const id = req.params.id;
       const query = {student: id};
       const result = await payments.find(query).toArray();
       res.send(result);
     })
 
-    app.get('/selections/:id', async(req, res) => {
+    app.get('/selections/:id', verifyJWT, async(req, res) => {
       const id = req.params.id;
       const query = {student: id};
       const result = await students.find(query).toArray();
@@ -65,7 +78,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/allusers', async(req, res) => {
+    app.get('/allusers', verifyJWT, async(req, res) => {
       const result = await usersDB.find().toArray();
       res.send(result);
     })
@@ -76,7 +89,7 @@ async function run() {
       res.send(result);
     })
 
-    app.post('/classes', async(req, res) => {
+    app.post('/classes', verifyJWT, async(req, res) => {
       const classData = req.body;
       const result = await instructors.insertOne(classData);
       res.send(result);
@@ -94,6 +107,10 @@ async function run() {
         };
         resultIns = await usersDB.insertOne(doc);
       }
+      const token = jwt.sign(userObj, process.env.ACCESS_TOKEN, {
+        expiresIn: '1h'
+      });
+      res.send({token});
     })
 
     app.put('/payments/:id', async(req, res) => {
@@ -101,7 +118,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const currentEn = await instructors.findOne(query);
-      console.log(currentEn.enrolled);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -195,10 +211,6 @@ app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
-app.post('/', (req, res) => {
-  console.log(req.body);
-  res.send('received!')
-})
 
 app.get('/test', (req, res) => {
   res.send(test)
