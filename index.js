@@ -129,18 +129,6 @@ async function run() {
       res.send({result, result1});
     })
 
-    app.put('/updateTesting', async(req, res) => {
-      const receivedData = req.body;
-      const id = '65f1762a05945cda344fea61';
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          enrolledStd : 0
-        },
-      };
-      const result = await instructors.updateOne(filter, updateDoc);
-      res.send(result)
-    })
 
     app.put('/userstatus/:id', async(req, res) =>{
       const id = req.params.id;
