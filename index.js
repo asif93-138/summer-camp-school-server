@@ -71,7 +71,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/user/:id', async(req, res) => {
+    app.get('/user/:id', verifyJWT, async(req, res) => {
       const id = req.params.id; 
       const query = { firebaseUserID: id };
       const result = await usersDB.findOne(query);
