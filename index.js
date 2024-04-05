@@ -108,7 +108,7 @@ async function run() {
         resultIns = await usersDB.insertOne(doc);
       }
       const token = jwt.sign(userObj, process.env.ACCESS_TOKEN, {
-        expiresIn: '1h'
+        expiresIn: '48h'
       });
       res.send({token});
     })
